@@ -53,7 +53,7 @@ def safe_copytree(src, dst, ignore_errors=True):
                     
                     # If it points to a file, copy the file content
                     if real_path.is_file():
-                        shutil.copy2(str(real_path), str(dst_item))
+                        shutil.copyfile(str(real_path), str(dst_item))
                     # If it points to a directory, skip it to avoid loops and issues
                     # Directory symlinks on NAS often cause permission errors
                     elif real_path.is_dir():
@@ -66,7 +66,7 @@ def safe_copytree(src, dst, ignore_errors=True):
             elif item.is_file():
                 # Regular file - copy it
                 try:
-                    shutil.copy2(str(item), str(dst_item))
+                    shutil.copyfile(str(item), str(dst_item))
                 except (OSError, PermissionError) as e:
                     if not ignore_errors:
                         raise
@@ -216,7 +216,7 @@ class BackupManagerCLI:
                 if src.is_dir():
                     safe_copytree(str(src), str(dst), ignore_errors=True)
                 else:
-                    shutil.copy2(src, dst)
+                    shutil.copyfile(src, dst)
         
         self.log("  ✓ Application configs backed up")
     
@@ -316,7 +316,7 @@ class BackupManagerCLI:
                     if item.is_dir():
                         safe_copytree(str(item), str(dst), ignore_errors=True)
                     else:
-                        shutil.copy2(item, dst)
+                        shutil.copyfile(item, dst)
         else:
             src = src_path / pattern
             if src.exists():
@@ -326,7 +326,7 @@ class BackupManagerCLI:
                 if src.is_dir():
                     safe_copytree(str(src), str(dst), ignore_errors=True)
                 else:
-                    shutil.copy2(src, dst)
+                    shutil.copyfile(src, dst)
     
     def save_metadata(self, backup_dir, timestamp, config):
         """Save backup metadata"""

@@ -25,6 +25,7 @@ def safe_copytree(src, dst, ignore_errors=True, progress_callback=None):
     Safely copy directory tree, handling symlinks and permission errors.
     This is NAS-friendly and won't fail on problematic symlinks.
     Uses manual recursive copy to have full control over error handling.
+    Uses shutil.copyfile() to avoid ANY permission/metadata operations (NFS compatibility).
     """
     src = Path(src)
     dst = Path(dst)
@@ -55,7 +56,8 @@ def safe_copytree(src, dst, ignore_errors=True, progress_callback=None):
                     
                     # If it points to a file, copy the file content
                     if real_path.is_file():
-                        shutil.copy2(str(real_path), str(dst_item))
+                        # Use copyfile() - only copies content, no permissions at all
+                        shutil.copyfile(str(real_path), str(dst_item))
                     # If it points to a directory, skip it to avoid loops and issues
                     # Directory symlinks on NAS often cause permission errors
                     elif real_path.is_dir():
@@ -69,9 +71,9 @@ def safe_copytree(src, dst, ignore_errors=True, progress_callback=None):
                     continue
                     
             elif item.is_file():
-                # Regular file - copy it
+                # Regular file - copy content only, no permissions (NFS compatibility)
                 try:
-                    shutil.copy2(str(item), str(dst_item))
+                    shutil.copyfile(str(item), str(dst_item))
                 except (OSError, PermissionError) as e:
                     if not ignore_errors:
                         raise
@@ -223,7 +225,7 @@ class BackupWorker(QThread):
                         self.progress.emit(f"  ✓ Backed up {app_path}")
                         backed_up_count += 1
                     else:
-                        shutil.copy2(src, dst)
+                        shutil.copyfile(src, dst)
                         self.progress.emit(f"  ✓ Backed up {app_path}")
                         backed_up_count += 1
                 except Exception as e:
@@ -342,7 +344,7 @@ class BackupWorker(QThread):
                         if item.is_dir():
                             safe_copytree(str(item), str(dst), ignore_errors=True, progress_callback=self.progress.emit)
                         else:
-                            shutil.copy2(item, dst)
+                            shutil.copyfile(item, dst)
                     except Exception as e:
                         self.progress.emit(f"  ⚠ Skipped {item.name}: {str(e)}")
         else:
@@ -355,7 +357,7 @@ class BackupWorker(QThread):
                     if src.is_dir():
                         safe_copytree(str(src), str(dst), ignore_errors=True, progress_callback=self.progress.emit)
                     else:
-                        shutil.copy2(src, dst)
+                        shutil.copyfile(src, dst)
                 except Exception as e:
                     self.progress.emit(f"  ⚠ Skipped {pattern}: {str(e)}")
     
@@ -464,7 +466,7 @@ class RestoreWorker(QThread):
                 rel_path = item.relative_to(kde_dir)
                 dst = Path(self.home) / rel_path
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(item, dst)
+                shutil.copyfile(item, dst)
         
         # Restart Plasma
         self.progress.emit("Restarting Plasma shell...")
@@ -483,7 +485,7 @@ class RestoreWorker(QThread):
                 rel_path = item.relative_to(config_dir)
                 dst = Path(self.home) / rel_path
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(item, dst)
+                shutil.copyfile(item, dst)
     
     def restore_firefox(self, firefox_dir):
         """Restore Firefox profiles"""
@@ -533,7 +535,7 @@ class RestoreWorker(QThread):
                         rel_path = item.relative_to(dir_type)
                         dst_file = dst / rel_path
                         dst_file.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(item, dst_file)
+                        shutil.copyfile(item, dst_file)
     
     def get_xdg_user_dirs(self):
         """Get XDG user directories"""
