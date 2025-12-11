@@ -1,0 +1,36 @@
+#
+# /etc/fstab
+# Created by anaconda on Sat Jul 12 20:28:29 2025
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+UUID=9c9e284e-66c3-42b6-9617-f5704ec9aa09 /                       btrfs   subvol=root,compress=zstd:1 0 0
+UUID=96caec57-7f3b-4d9f-98b9-69484d039b9b /boot                   ext4    defaults        1 2
+UUID=3A14-E2DA          /boot/efi               vfat    umask=0077,shortname=winnt 0 2
+UUID=9c9e284e-66c3-42b6-9617-f5704ec9aa09 /home                   btrfs   subvol=home,compress=zstd:1 0 0
+
+# NAS Network Shares
+//80.11.92.13/Musique                    /home/mike/NAS/Music             cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Music          0 0
+//80.11.92.13/Backups                    /home/mike/NAS/Backups           cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Backups          0 0
+//80.11.92.13/Documents                  /home/mike/NAS/Documents         cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Documents          0 0
+//80.11.92.13/downloads                  /home/mike/NAS/Downloads         cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Downloads          0 0
+//80.11.92.13/Games                      /home/mike/NAS/Games             cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Games          0 0
+//80.11.92.13/Images                     /home/mike/NAS/Pictures          cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Images          0 0
+//80.11.92.13/Lecture                    /home/mike/NAS/Lecture           cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Lecture          0 0
+//80.11.92.13/OS                         /home/mike/NAS/OS                cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=OS          0 0
+//80.11.92.13/Photos                     /home/mike/NAS/Photos            cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Photos          0 0
+//80.11.92.13/Proxmox                    /home/mike/NAS/Proxmox           cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Proxmox          0 0
+//80.11.92.13/Sam                        /home/mike/NAS/Sam               cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Sam          0 0
+//80.11.92.13/Software                   /home/mike/NAS/Software          cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Software          0 0
+//80.11.92.13/surveillance               /home/mike/NAS/Surveillance      cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Surveillance          0 0
+//80.11.92.13/Videos                     /home/mike/NAS/Videos            cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Videos          0 0
+//80.11.92.13/Web                        /home/mike/NAS/Web               cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Web          0 0
+//80.11.92.13/Web_and_Design             /home/mike/NAS/Web_and_Design    cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,_netdev,nofail,x-systemd.automount,x-systemd.requires=network-online.target,x-systemd.device-timeout=10s,x-gvfs-name=Web%20and%20Design          0 0
+
+# Jellyfin Mounts (already correct)
+//192.168.1.17/Videos/TV_Series          /mnt/Jellyfin/TV_Series          cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,nofail,x-gvfs-name=TV%20Series          0 0
+//192.168.1.17/Videos/Movies             /mnt/Jellyfin/Movies             cifs    credentials=/home/mike/duccinas,iocharset=utf8,file_mode=0777,dir_mode=0777,uid=mike,gid=mike,nofail,x-gvfs-name=Movies          0 0

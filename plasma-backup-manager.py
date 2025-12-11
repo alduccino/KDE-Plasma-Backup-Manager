@@ -23,9 +23,8 @@ from PyQt6.QtGui import QIcon, QFont
 def safe_copytree(src, dst, ignore_errors=True, progress_callback=None):
     """
     Safely copy directory tree, handling symlinks and permission errors.
-    This is NAS-friendly and won't fail on problematic symlinks.
-    Uses manual recursive copy to have full control over error handling.
-    Uses shutil.copyfile() to avoid ANY permission/metadata operations (NFS compatibility).
+    This is NAS-friendly (CIFS/SMB compatible) and won't fail on problematic symlinks.
+    Uses manual file read/write to avoid ALL permission/metadata operations.
     """
     src = Path(src)
     dst = Path(dst)
@@ -56,24 +55,26 @@ def safe_copytree(src, dst, ignore_errors=True, progress_callback=None):
                     
                     # If it points to a file, copy the file content
                     if real_path.is_file():
-                        # Use copyfile() - only copies content, no permissions at all
-                        shutil.copyfile(str(real_path), str(dst_item))
-                    # If it points to a directory, skip it to avoid loops and issues
-                    # Directory symlinks on NAS often cause permission errors
+                        # Manual read/write - most CIFS-compatible method
+                        with open(str(real_path), 'rb') as src_file:
+                            with open(str(dst_item), 'wb') as dst_file:
+                                dst_file.write(src_file.read())
+                    # If it points to a directory, skip it
                     elif real_path.is_dir():
                         if progress_callback:
                             progress_callback(f"  ⊘ Skipped directory symlink: {item.name}")
                         continue
                 except (OSError, PermissionError, RuntimeError):
-                    # Broken symlink or permission error - skip it
                     if progress_callback:
                         progress_callback(f"  ⊘ Skipped broken symlink: {item.name}")
                     continue
                     
             elif item.is_file():
-                # Regular file - copy content only, no permissions (NFS compatibility)
+                # Regular file - manual read/write for CIFS compatibility
                 try:
-                    shutil.copyfile(str(item), str(dst_item))
+                    with open(str(item), 'rb') as src_file:
+                        with open(str(dst_item), 'wb') as dst_file:
+                            dst_file.write(src_file.read())
                 except (OSError, PermissionError) as e:
                     if not ignore_errors:
                         raise
@@ -572,6 +573,11 @@ class BackupManagerGUI(QMainWindow):
         self.setWindowTitle("KDE Plasma Backup Manager")
         self.setMinimumSize(900, 700)
         
+        # Set window icon
+        icon_path = Path(__file__).parent / "Plasma-backup.png"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
+        
         # Default settings
         self.hostname = os.uname().nodename
         self.default_backup_base = str(Path.home() / "NAS" / "Backups" / "Fedora" / "KDE")
@@ -782,6 +788,90 @@ class BackupManagerGUI(QMainWindow):
         info_group.setLayout(info_layout)
         layout.addWidget(info_group)
         
+        # Automatic Backup Scheduling
+        schedule_group = QGroupBox("Automatic Backup Schedule")
+        schedule_layout = QVBoxLayout()
+        
+        self.schedule_enabled_cb = QCheckBox("Enable automatic backups")
+        self.schedule_enabled_cb.stateChanged.connect(self.on_schedule_changed)
+        schedule_layout.addWidget(self.schedule_enabled_cb)
+        
+        # Frequency selection
+        freq_layout = QHBoxLayout()
+        freq_layout.addWidget(QLabel("Frequency:"))
+        
+        self.schedule_freq = QButtonGroup()
+        self.daily_rb = QRadioButton("Daily")
+        self.weekly_rb = QRadioButton("Weekly")
+        self.monthly_rb = QRadioButton("Monthly")
+        
+        self.schedule_freq.addButton(self.daily_rb, 1)
+        self.schedule_freq.addButton(self.weekly_rb, 2)
+        self.schedule_freq.addButton(self.monthly_rb, 3)
+        
+        self.weekly_rb.setChecked(True)
+        
+        freq_layout.addWidget(self.daily_rb)
+        freq_layout.addWidget(self.weekly_rb)
+        freq_layout.addWidget(self.monthly_rb)
+        freq_layout.addStretch()
+        
+        schedule_layout.addLayout(freq_layout)
+        
+        # Time selection
+        time_layout = QHBoxLayout()
+        time_layout.addWidget(QLabel("Time:"))
+        self.schedule_time = QLineEdit("02:00")
+        self.schedule_time.setMaximumWidth(100)
+        self.schedule_time.setPlaceholderText("HH:MM")
+        time_layout.addWidget(self.schedule_time)
+        time_layout.addWidget(QLabel("(24-hour format)"))
+        time_layout.addStretch()
+        schedule_layout.addLayout(time_layout)
+        
+        # Apply schedule button
+        apply_schedule_btn = QPushButton("Apply Schedule")
+        apply_schedule_btn.clicked.connect(self.apply_schedule)
+        schedule_layout.addWidget(apply_schedule_btn)
+        
+        # Current schedule status
+        self.schedule_status = QLabel()
+        self.update_schedule_status()
+        schedule_layout.addWidget(self.schedule_status)
+        
+        schedule_group.setLayout(schedule_layout)
+        layout.addWidget(schedule_group)
+        
+        # Backup Retention
+        retention_group = QGroupBox("Backup Retention")
+        retention_layout = QVBoxLayout()
+        
+        retention_desc = QLabel("Keep only the most recent backups to save space:")
+        retention_desc.setWordWrap(True)
+        retention_layout.addWidget(retention_desc)
+        
+        keep_layout = QHBoxLayout()
+        keep_layout.addWidget(QLabel("Keep last:"))
+        self.keep_backups = QLineEdit("10")
+        self.keep_backups.setMaximumWidth(100)
+        keep_layout.addWidget(self.keep_backups)
+        keep_layout.addWidget(QLabel("backups per computer"))
+        keep_layout.addStretch()
+        retention_layout.addLayout(keep_layout)
+        
+        # Cleanup button
+        cleanup_btn = QPushButton("Clean Up Old Backups Now")
+        cleanup_btn.clicked.connect(self.cleanup_old_backups)
+        retention_layout.addWidget(cleanup_btn)
+        
+        # Auto cleanup option
+        self.auto_cleanup_cb = QCheckBox("Automatically clean up old backups after each backup")
+        self.auto_cleanup_cb.setChecked(True)
+        retention_layout.addWidget(self.auto_cleanup_cb)
+        
+        retention_group.setLayout(retention_layout)
+        layout.addWidget(retention_group)
+        
         # Default paths
         paths_group = QGroupBox("Default Paths")
         paths_layout = QVBoxLayout()
@@ -799,15 +889,17 @@ class BackupManagerGUI(QMainWindow):
         about_layout = QVBoxLayout()
         
         about_text = QLabel(
-            "KDE Plasma Backup Manager v1.0\n\n"
+            "KDE Plasma Backup Manager v1.1\n\n"
             "A comprehensive backup and restore solution for KDE Plasma settings,\n"
             "application configurations, and user data.\n\n"
-            "Supports:\n"
+            "Features:\n"
             "• KDE Plasma settings and plasmoid configurations\n"
             "• Firefox and Thunderbird complete profiles\n"
             "• Application configurations\n"
             "• User directories (localized names supported)\n"
-            "• Network storage (NAS) integration"
+            "• Network storage (NAS) integration\n"
+            "• Automatic backup scheduling\n"
+            "• Backup retention management"
         )
         about_text.setWordWrap(True)
         about_layout.addWidget(about_text)
@@ -818,6 +910,195 @@ class BackupManagerGUI(QMainWindow):
         layout.addStretch()
         
         return widget
+    
+    def on_schedule_changed(self, state):
+        """Handle schedule enabled/disabled"""
+        enabled = state == Qt.CheckState.Checked.value
+        self.daily_rb.setEnabled(enabled)
+        self.weekly_rb.setEnabled(enabled)
+        self.monthly_rb.setEnabled(enabled)
+        self.schedule_time.setEnabled(enabled)
+    
+    def update_schedule_status(self):
+        """Update the schedule status label"""
+        try:
+            result = subprocess.run(['systemctl', '--user', 'is-enabled', 'plasma-backup.timer'],
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                # Timer is enabled, get next run time
+                result = subprocess.run(['systemctl', '--user', 'list-timers', 'plasma-backup.timer'],
+                                      capture_output=True, text=True)
+                self.schedule_status.setText(f"✓ Automatic backups enabled\n{result.stdout}")
+                self.schedule_status.setStyleSheet("color: green;")
+            else:
+                self.schedule_status.setText("Automatic backups not configured")
+                self.schedule_status.setStyleSheet("color: gray;")
+        except:
+            self.schedule_status.setText("Automatic backups not configured")
+            self.schedule_status.setStyleSheet("color: gray;")
+    
+    def apply_schedule(self):
+        """Apply the backup schedule"""
+        if not self.schedule_enabled_cb.isChecked():
+            # Disable timer
+            try:
+                subprocess.run(['systemctl', '--user', 'disable', 'plasma-backup.timer'], check=True)
+                subprocess.run(['systemctl', '--user', 'stop', 'plasma-backup.timer'], check=True)
+                QMessageBox.information(self, "Schedule Disabled", "Automatic backups have been disabled.")
+                self.update_schedule_status()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to disable schedule: {str(e)}")
+            return
+        
+        # Get settings
+        time_str = self.schedule_time.text().strip()
+        if not time_str or ':' not in time_str:
+            QMessageBox.warning(self, "Invalid Time", "Please enter time in HH:MM format (e.g., 02:00)")
+            return
+        
+        try:
+            hour, minute = time_str.split(':')
+            hour = int(hour)
+            minute = int(minute)
+            if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+                raise ValueError()
+        except:
+            QMessageBox.warning(self, "Invalid Time", "Please enter valid time in HH:MM format (00:00 - 23:59)")
+            return
+        
+        # Determine frequency
+        if self.daily_rb.isChecked():
+            frequency = "daily"
+            calendar = f"*-*-* {hour:02d}:{minute:02d}:00"
+        elif self.weekly_rb.isChecked():
+            frequency = "weekly"
+            calendar = f"Sun *-*-* {hour:02d}:{minute:02d}:00"
+        else:  # monthly
+            frequency = "monthly"
+            calendar = f"*-*-01 {hour:02d}:{minute:02d}:00"
+        
+        # Create systemd timer
+        self.create_systemd_timer(calendar, frequency)
+    
+    def create_systemd_timer(self, calendar, frequency):
+        """Create systemd user timer for automatic backups"""
+        systemd_dir = Path.home() / ".config" / "systemd" / "user"
+        systemd_dir.mkdir(parents=True, exist_ok=True)
+        
+        service_file = systemd_dir / "plasma-backup.service"
+        timer_file = systemd_dir / "plasma-backup.timer"
+        
+        # Get the CLI script path
+        cli_script = Path(__file__).parent / "plasma-backup-cli.py"
+        
+        # Create service file
+        service_content = f"""[Unit]
+Description=KDE Plasma Automatic Backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={sys.executable} {cli_script} backup
+StandardOutput=journal
+StandardError=journal
+"""
+        
+        with open(service_file, 'w') as f:
+            f.write(service_content)
+        
+        # Create timer file
+        timer_content = f"""[Unit]
+Description=KDE Plasma Backup Timer ({frequency})
+Requires=plasma-backup.service
+
+[Timer]
+OnCalendar={calendar}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
+        
+        with open(timer_file, 'w') as f:
+            f.write(timer_content)
+        
+        # Reload systemd and enable timer
+        try:
+            subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
+            subprocess.run(['systemctl', '--user', 'enable', 'plasma-backup.timer'], check=True)
+            subprocess.run(['systemctl', '--user', 'start', 'plasma-backup.timer'], check=True)
+            
+            QMessageBox.information(
+                self, "Schedule Applied",
+                f"Automatic {frequency} backups have been configured!\n\n"
+                f"Backups will run at {self.schedule_time.text()} {frequency}.\n\n"
+                "You can check the schedule with:\n"
+                "systemctl --user list-timers plasma-backup.timer"
+            )
+            self.update_schedule_status()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create schedule: {str(e)}")
+    
+    def cleanup_old_backups(self):
+        """Clean up old backups based on retention policy"""
+        try:
+            keep_count = int(self.keep_backups.text())
+            if keep_count < 1:
+                raise ValueError()
+        except:
+            QMessageBox.warning(self, "Invalid Number", "Please enter a valid number of backups to keep (1 or more)")
+            return
+        
+        backup_base = Path(self.backup_path).parent
+        
+        if not backup_base.exists():
+            QMessageBox.information(self, "No Backups", "No backup directory found.")
+            return
+        
+        # Get all backup directories
+        backups = []
+        for item in backup_base.iterdir():
+            if item.is_dir() and item.name[0].isdigit():  # Timestamped directories
+                backups.append(item)
+        
+        if len(backups) <= keep_count:
+            QMessageBox.information(
+                self, "No Cleanup Needed",
+                f"You have {len(backups)} backup(s), keeping {keep_count}.\nNo cleanup needed."
+            )
+            return
+        
+        # Sort by name (timestamp) and keep only recent ones
+        backups.sort(reverse=True)
+        to_delete = backups[keep_count:]
+        
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self, "Confirm Cleanup",
+            f"This will delete {len(to_delete)} old backup(s):\n\n" +
+            "\n".join([b.name for b in to_delete[:5]]) +
+            (f"\n... and {len(to_delete) - 5} more" if len(to_delete) > 5 else "") +
+            "\n\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        
+        # Delete old backups
+        deleted = 0
+        for backup in to_delete:
+            try:
+                shutil.rmtree(backup)
+                deleted += 1
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Could not delete {backup.name}: {str(e)}")
+        
+        QMessageBox.information(
+            self, "Cleanup Complete",
+            f"Successfully deleted {deleted} old backup(s).\n\n"
+            f"Kept the {keep_count} most recent backups."
+        )
     
     def browse_backup_location(self):
         """Browse for backup location"""
@@ -935,11 +1216,45 @@ class BackupManagerGUI(QMainWindow):
         self.backup_btn.setEnabled(True)
         
         if success:
+            # Auto cleanup if enabled
+            if hasattr(self, 'auto_cleanup_cb') and self.auto_cleanup_cb.isChecked():
+                try:
+                    keep_count = int(self.keep_backups.text())
+                    self.auto_cleanup_backups(keep_count)
+                except:
+                    pass
+            
             QMessageBox.information(self, "Backup Complete", message)
         else:
             QMessageBox.critical(self, "Backup Failed", message)
         
         self.statusBar().showMessage("Ready")
+    
+    def auto_cleanup_backups(self, keep_count):
+        """Automatically clean up old backups"""
+        backup_base = Path(self.backup_path).parent
+        
+        if not backup_base.exists():
+            return
+        
+        # Get all backup directories
+        backups = []
+        for item in backup_base.iterdir():
+            if item.is_dir() and item.name[0].isdigit():
+                backups.append(item)
+        
+        if len(backups) <= keep_count:
+            return
+        
+        # Sort and delete old ones
+        backups.sort(reverse=True)
+        to_delete = backups[keep_count:]
+        
+        for backup in to_delete:
+            try:
+                shutil.rmtree(backup)
+            except:
+                pass
     
     def start_restore(self):
         """Start restore process"""
