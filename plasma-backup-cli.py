@@ -22,70 +22,66 @@ def safe_copytree(src, dst, ignore_errors=True):
     """
     Safely copy directory tree, handling symlinks and permission errors.
     This is NAS-friendly and won't fail on problematic symlinks.
+    Uses manual recursive copy to have full control over error handling.
     """
-    def copy_function(src_file, dst_file):
-        """Custom copy function that handles symlinks"""
-        try:
-            # If it's a symlink, copy the target content instead of the link itself
-            if os.path.islink(src_file):
-                # Follow the symlink and copy the actual content
-                real_src = os.path.realpath(src_file)
-                if os.path.exists(real_src):
-                    if os.path.isdir(real_src):
-                        # Don't recursively copy directory symlinks to avoid loops
-                        return
-                    else:
-                        shutil.copy2(real_src, dst_file)
-                return
-            else:
-                # Regular file, copy normally
-                shutil.copy2(src_file, dst_file)
-        except (OSError, PermissionError) as e:
-            if not ignore_errors:
-                raise
-            # Skip files that can't be copied
-            pass
-    
-    def ignore_function(directory, contents):
-        """Ignore function to skip problematic items"""
-        ignored = []
-        for item in contents:
-            item_path = os.path.join(directory, item)
-            # Skip if it's a broken symlink
-            if os.path.islink(item_path) and not os.path.exists(os.path.realpath(item_path)):
-                ignored.append(item)
-            # Skip if it's a directory symlink (to avoid loops)
-            elif os.path.islink(item_path) and os.path.isdir(os.path.realpath(item_path)):
-                ignored.append(item)
-        return ignored
+    src = Path(src)
+    dst = Path(dst)
     
     try:
-        # Use copy_function instead of symlinks=True
-        shutil.copytree(
-            src, dst, 
-            copy_function=copy_function,
-            ignore=ignore_function,
-            dirs_exist_ok=True,
-            ignore_dangling_symlinks=True
-        )
+        dst.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         if not ignore_errors:
             raise
-        # If copytree fails entirely, try manual copy
+        return
+    
+    try:
+        items = list(src.iterdir())
+    except (OSError, PermissionError) as e:
+        if not ignore_errors:
+            raise
+        return
+    
+    for item in items:
+        dst_item = dst / item.name
+        
         try:
-            os.makedirs(dst, exist_ok=True)
-            for item in os.listdir(src):
-                s = os.path.join(src, item)
-                d = os.path.join(dst, item)
-                if os.path.isdir(s) and not os.path.islink(s):
-                    safe_copytree(s, d, ignore_errors)
-                elif not os.path.islink(s):
-                    try:
-                        shutil.copy2(s, d)
-                    except:
-                        pass
-        except:
-            pass
+            # Check if it's a symlink
+            if item.is_symlink():
+                # Try to resolve the symlink
+                try:
+                    real_path = item.resolve(strict=True)
+                    
+                    # If it points to a file, copy the file content
+                    if real_path.is_file():
+                        shutil.copy2(str(real_path), str(dst_item))
+                    # If it points to a directory, skip it to avoid loops and issues
+                    # Directory symlinks on NAS often cause permission errors
+                    elif real_path.is_dir():
+                        # Skip directory symlinks
+                        continue
+                except (OSError, PermissionError, RuntimeError):
+                    # Broken symlink or permission error - skip it
+                    continue
+                    
+            elif item.is_file():
+                # Regular file - copy it
+                try:
+                    shutil.copy2(str(item), str(dst_item))
+                except (OSError, PermissionError) as e:
+                    if not ignore_errors:
+                        raise
+                    # Skip files that can't be copied
+                    continue
+                    
+            elif item.is_dir():
+                # Regular directory - recurse into it
+                safe_copytree(str(item), str(dst_item), ignore_errors=ignore_errors)
+                
+        except (OSError, PermissionError) as e:
+            if not ignore_errors:
+                raise
+            # Skip items that cause errors
+            continue
 
 class BackupManagerCLI:
     def __init__(self):
