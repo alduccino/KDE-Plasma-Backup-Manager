@@ -68,6 +68,8 @@ A comprehensive Qt6-based backup and restore solution for KDE Plasma systems, sp
 - 🌐 **NAS Integration** - Designed for network storage backup
 - 🏷️ **Per-Host Backups** - Automatically organizes backups by hostname
 - 📅 **Timestamped Backups** - Each backup includes timestamp for easy identification
+- 💾 **Flexible Storage** - Works with NAS, external drives, secondary disks, or local directories
+- ⚙️ **Custom Backup Location** - Choose your backup path during installation or in the GUI
 - 🔄 **Complete Restore** - One-click restoration of all settings
 - 🌍 **Localization Support** - Handles localized directory names (French, etc.)
 - 📊 **Progress Tracking** - Real-time progress updates during backup/restore
@@ -203,7 +205,7 @@ plasma-backup-manager
 
 1. Open the application
 2. Go to the **Backup** tab
-3. Verify the backup path (default: `~/NAS/PlasmaBackup/[hostname]`)
+3. Verify the backup path (default: `~/NAS/Backups/Fedora/KDE/[hostname]`)
 4. Select what to backup:
    - ✓ KDE Plasma Settings & Plasmoids
    - ✓ Application Configurations
@@ -229,7 +231,7 @@ plasma-backup-manager
 Backups are organized as follows:
 
 ```
-~/NAS/PlasmaBackup/
+~/NAS/Backups/Fedora/KDE/
 └── hostname/
     ├── 20241211_143022/
     │   ├── backup_metadata.json
@@ -259,35 +261,45 @@ Each backup includes a `backup_metadata.json` file with:
 
 ## Customizing Backup Location
 
+### During Installation
+
+The installer will ask you to choose your backup location. You can select:
+- Default: `~/NAS/Backups/Fedora/KDE/` (for NAS storage)
+- Custom path: Any directory you prefer
+
+The chosen path is saved and automatically used by the application.
+
 ### In the GUI
 
 1. Go to the **Backup** tab
 2. In the "Backup Location" section, modify the path
 3. Click **Browse...** to select a different directory
 
-### Custom NAS Mount Point
+### Custom Storage Examples
 
-If your NAS is mounted elsewhere:
+**NAS Storage:**
+```
+~/NAS/Backups/Fedora/KDE/hostname
+```
 
-```bash
-# Example: NAS mounted at /mnt/nas
-# In the application, change the path to:
-/mnt/nas/PlasmaBackup/hostname
+**External Drive:**
+```
+/media/mike/backup-drive/Fedora/KDE/hostname
+```
+
+**Secondary Disk:**
+```
+/mnt/storage/Backups/Fedora/KDE/hostname
+```
+
+**Local Directory:**
+```
+/home/mike/Backups/KDE/hostname
 ```
 
 ### Environment-Specific Paths
 
-For multiple computers with different NAS locations, you can:
-
-1. **Use hostname-based paths:**
-   ```
-   ~/NAS/PlasmaBackup/desktop-pc
-   ~/NAS/PlasmaBackup/laptop
-   ```
-
-2. **Use custom paths per machine:**
-   - Desktop: `/mnt/storage/Backups/desktop-pc`
-   - Laptop: `~/NAS/Backups/laptop`
+For multiple computers with different storage locations, the installer lets each machine configure its own path. The application will remember the setting.
 
 ## Troubleshooting
 

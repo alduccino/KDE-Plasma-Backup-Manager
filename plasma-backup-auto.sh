@@ -5,7 +5,15 @@
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="$HOME/.local/share/plasma-backup-manager/backup.log"
-BACKUP_PATH="${BACKUP_PATH:-$HOME/NAS/PlasmaBackup/$(hostname)}"
+
+# Try to read backup path from config, otherwise use default
+CONFIG_FILE="$HOME/.config/plasma-backup-manager/config.json"
+if [ -f "$CONFIG_FILE" ]; then
+    BACKUP_BASE=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['backup_base_path'])" 2>/dev/null)
+fi
+
+BACKUP_BASE="${BACKUP_BASE:-$HOME/NAS/Backups/Fedora/KDE}"
+BACKUP_PATH="${BACKUP_PATH:-$BACKUP_BASE/$(hostname)}"
 
 # Create log directory
 mkdir -p "$(dirname "$LOG_FILE")"

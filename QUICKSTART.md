@@ -7,25 +7,30 @@
 git clone https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
 cd KDE-Plasma-Backup-Manager
 
-# 2. Run the installer
+# 2. Run the installer (it will ask you to choose your backup location)
 chmod +x install.sh
 ./install.sh
 
-# 3. Done! Launch from your application menu
+# 3. Follow the prompts:
+#    - Choose default location (~/NAS/Backups/Fedora/KDE) or custom path
+#    - Create the backup directory
+#    - Done!
+
+# 4. Launch from your application menu or terminal
 ```
 
 ## First Backup (2 minutes)
 
 1. **Launch** the application from your menu
-2. **Verify** the backup path shows: `~/NAS/PlasmaBackup/your-hostname`
+2. **Verify** the backup path shows: `~/NAS/Backups/Fedora/KDE/your-hostname` (or your custom path)
 3. **Check** all the boxes (they're checked by default)
 4. **Click** "Start Backup"
 5. **Wait** for completion
 6. **Done!** Your backup is saved
 
-## Setting Up NAS (One-time, 3 minutes)
+## Setting Up Storage (One-time, 5 minutes)
 
-### If you haven't mounted your NAS yet:
+### Option 1: NAS Mount (Recommended for network storage)
 
 ```bash
 # Create mount point
@@ -41,9 +46,38 @@ sudo mount -a
 ls ~/NAS
 ```
 
-### If your NAS is already mounted elsewhere:
+### Option 2: External Drive
 
-Just change the backup path in the application to point to your mount location.
+```bash
+# Your drive is usually auto-mounted at:
+/media/username/drive-name/
+
+# During installation, use this path:
+/media/username/drive-name/Backups/Fedora/KDE
+```
+
+### Option 3: Secondary Disk
+
+```bash
+# Mount your disk to a permanent location
+sudo mkdir -p /mnt/storage
+# Add mount entry to /etc/fstab, then:
+sudo mount -a
+
+# During installation, use:
+/mnt/storage/Backups/Fedora/KDE
+```
+
+### Option 4: Local Directory
+
+```bash
+# Simply use any local directory:
+/home/username/Backups/Fedora/KDE
+# or
+~/Backups/KDE
+```
+
+The installer will guide you through selecting and creating your preferred location.
 
 ## Restoring a Backup (2 minutes)
 
@@ -57,7 +91,7 @@ Just change the backup path in the application to point to your mount location.
 ## Default Backup Path
 
 ```
-~/NAS/PlasmaBackup/
+~/NAS/Backups/Fedora/KDE/
 └── your-hostname/
     └── 20241211_143022/  (timestamp)
         ├── kde/          (Plasma settings)
@@ -66,6 +100,11 @@ Just change the backup path in the application to point to your mount location.
         ├── configs/      (App configs)
         └── user_data/    (Documents, Pictures, etc.)
 ```
+
+**Note:** You can choose a different path during installation:
+- External drive: `/media/username/drive/Backups/Fedora/KDE/`
+- Secondary disk: `/mnt/storage/Backups/Fedora/KDE/`
+- Custom location: Any directory you prefer
 
 ## What Gets Backed Up?
 

@@ -91,8 +91,24 @@ class BackupManagerCLI:
     def __init__(self):
         self.home = str(Path.home())
         self.hostname = os.uname().nodename
-        self.default_backup_base = str(Path.home() / "NAS" / "PlasmaBackup")
+        self.default_backup_base = str(Path.home() / "NAS" / "Backups" / "Fedora" / "KDE")
+        
+        # Try to load custom backup path from config
+        self.load_backup_config()
+        
         self.backup_path = str(Path(self.default_backup_base) / self.hostname)
+    
+    def load_backup_config(self):
+        """Load custom backup path from config file if it exists"""
+        config_file = Path.home() / ".config" / "plasma-backup-manager" / "config.json"
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    if 'backup_base_path' in config:
+                        self.default_backup_base = config['backup_base_path']
+            except:
+                pass  # Use default if config can't be read
     
     def log(self, message):
         """Print log message with timestamp"""

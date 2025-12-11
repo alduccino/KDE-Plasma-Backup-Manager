@@ -7,17 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned Features
-- Compression support (tar.gz, zip)
-- Incremental backup functionality
-- Backup encryption
-- Selective file restore
-- Backup comparison tool
-- GUI translations (French, German, Spanish, etc.)
-- Steam library backup integration
-- Lutris game saves backup
-- Backup size estimation before backup
-- Bandwidth throttling for network backups
+### Added
+- Interactive backup location selection during installation
+- Support for custom backup paths (NAS, external drives, secondary disks, local directories)
+- Configuration file to save custom backup location
+- Better symlink handling for NAS/CIFS compatibility
+
+### Changed
+- Default backup path changed from `~/NAS/PlasmaBackup` to `~/NAS/Backups/Fedora/KDE`
+- Improved error handling for symlinks and permission issues
+- Installation script now prompts for backup location preference
+
+### Fixed
+- Symlink copy errors on NFS/CIFS mounts
+- Permission denied errors when backing up to network storage
+- Broken symlinks causing backup failures
 
 ## [1.0.0] - 2024-12-11
 

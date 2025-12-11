@@ -76,19 +76,59 @@ if [ -d "$HOME/.local/bin" ]; then
 fi
 
 # Create default backup directory structure
-DEFAULT_BACKUP_DIR="$HOME/NAS/PlasmaBackup"
-echo -e "${BLUE}Setting up default backup directory...${NC}"
+DEFAULT_BACKUP_DIR="$HOME/NAS/Backups/Fedora/KDE"
+echo -e "${BLUE}Setting up backup location...${NC}"
+echo ""
+echo "The backup location is where all your backups will be stored."
+echo "This can be:"
+echo "  • A NAS mount point (e.g., ~/NAS/Backups/Fedora/KDE)"
+echo "  • A secondary disk (e.g., /mnt/backup/KDE)"
+echo "  • An external drive (e.g., /media/backup/KDE)"
+echo "  • Any local directory"
+echo ""
 echo "Default location: $DEFAULT_BACKUP_DIR"
 echo ""
-echo "Note: This assumes your NAS is mounted at ~/NAS/"
-echo "If your NAS is mounted elsewhere, you can change this in the application."
-echo ""
 
-read -p "Create default backup directory? (y/n) " -n 1 -r
+read -p "Use default location? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    mkdir -p "$DEFAULT_BACKUP_DIR"
-    echo -e "${GREEN}✓ Default backup directory created${NC}"
+    BACKUP_DIR="$DEFAULT_BACKUP_DIR"
+else
+    echo ""
+    echo "Enter your preferred backup location:"
+    echo "(Use absolute path, e.g., /mnt/backup/Fedora/KDE)"
+    read -p "Path: " BACKUP_DIR
+    
+    # Expand ~ to home directory if present
+    BACKUP_DIR="${BACKUP_DIR/#\~/$HOME}"
+fi
+
+echo ""
+echo "Backup location will be: $BACKUP_DIR"
+echo "Backups will be organized as: $BACKUP_DIR/[hostname]/[timestamp]/"
+echo ""
+
+read -p "Create this directory now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if mkdir -p "$BACKUP_DIR" 2>/dev/null; then
+        echo -e "${GREEN}✓ Backup directory created: $BACKUP_DIR${NC}"
+        
+        # Save the custom path to a config file for the application to read
+        CONFIG_DIR="$HOME/.config/plasma-backup-manager"
+        mkdir -p "$CONFIG_DIR"
+        cat > "$CONFIG_DIR/config.json" << EOF
+{
+    "backup_base_path": "$BACKUP_DIR"
+}
+EOF
+        echo -e "${GREEN}✓ Backup location saved to configuration${NC}"
+    else
+        echo -e "${YELLOW}⚠ Could not create directory. You may need to create it manually or check permissions.${NC}"
+        echo "The application will use: $BACKUP_DIR"
+    fi
+else
+    echo -e "${YELLOW}⚠ Directory not created. Make sure it exists before running backups.${NC}"
 fi
 
 echo ""
@@ -104,9 +144,10 @@ if [ -d "$HOME/.local/bin" ]; then
 fi
 echo ""
 echo -e "${YELLOW}Important Notes:${NC}"
-echo "• Make sure your NAS is properly mounted before creating backups"
-echo "• The default backup location is ~/NAS/PlasmaBackup/[hostname]"
-echo "• You can customize the backup location in the application"
+echo "• Make sure your backup location is accessible before creating backups"
+echo "• Your backups will be saved to: $BACKUP_DIR/[hostname]/"
+echo "• You can change the backup location anytime in the application"
+echo "• Each backup is timestamped for easy identification"
 echo "• Always test restore on a non-critical system first"
 echo ""
 echo -e "${BLUE}For NAS mounting help, see the README.md file${NC}"
