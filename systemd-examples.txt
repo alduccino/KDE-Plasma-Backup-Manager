@@ -1,0 +1,35 @@
+# Example systemd service for automated backups
+# Copy these files to ~/.config/systemd/user/
+
+# File: plasma-backup.service
+[Unit]
+Description=KDE Plasma Automatic Backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment="DISPLAY=:0"
+Environment="XDG_RUNTIME_DIR=/run/user/%U"
+ExecStart=/home/%u/.local/bin/plasma-backup-cli.sh
+
+# File: plasma-backup.timer
+[Unit]
+Description=Weekly KDE Plasma Backup Timer
+Requires=plasma-backup.service
+
+[Timer]
+# Run every Sunday at 2 AM
+OnCalendar=Sun *-*-* 02:00:00
+# Run on boot if missed
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+# Installation instructions:
+# 1. Copy these to: ~/.config/systemd/user/plasma-backup.service
+#                    ~/.config/systemd/user/plasma-backup.timer
+# 2. Create the CLI script (see plasma-backup-cli.sh)
+# 3. Enable: systemctl --user enable plasma-backup.timer
+# 4. Start: systemctl --user start plasma-backup.timer
+# 5. Check: systemctl --user list-timers

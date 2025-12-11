@@ -1,0 +1,450 @@
+# KDE Plasma Backup Manager
+
+A comprehensive Qt6-based backup and restore solution for KDE Plasma systems, specifically designed for Fedora Linux with KDE Plasma 6.5+.
+
+## Features
+
+### What Gets Backed Up
+
+✅ **KDE Plasma Settings**
+- All Plasma configuration files
+- Plasmoid (widget) configurations and settings
+- Desktop layouts and panel configurations
+- Keyboard shortcuts and hotkeys
+- Display and window manager settings
+- Konsole profiles and color schemes
+- System tray settings
+
+✅ **Application Configurations**
+- Complete Firefox profiles (bookmarks, extensions, settings)
+- Complete Thunderbird profiles (emails, accounts, filters)
+- General application configurations from ~/.config
+- Application data from ~/.local/share
+- Shell configurations (.bashrc, .zshrc, etc.)
+- Git configuration
+- SSH configuration
+- VS Code/Codium settings
+
+✅ **User Directories**
+- Documents (or localized name like "Documents" in French)
+- Pictures/Images (or "Images" in French)
+- Videos/Vidéos (or "Vidéos" in French)
+- Music/Musique
+- Downloads/Téléchargements
+- Automatically detects XDG user directory names (supports all languages)
+
+### Key Features
+
+- 🎨 **Native Qt6 Interface** - Fully integrated with KDE Plasma 6.5+
+- 🌐 **NAS Integration** - Designed for network storage backup
+- 🏷️ **Per-Host Backups** - Automatically organizes backups by hostname
+- 📅 **Timestamped Backups** - Each backup includes timestamp for easy identification
+- 🔄 **Complete Restore** - One-click restoration of all settings
+- 🌍 **Localization Support** - Handles localized directory names (French, etc.)
+- 📊 **Progress Tracking** - Real-time progress updates during backup/restore
+- 💾 **Metadata Storage** - Stores system information with each backup
+
+## Requirements
+
+- Fedora Linux (tested on Fedora 43+)
+- KDE Plasma 6.5 or higher
+- Python 3.9+
+- Qt6
+- PyQt6
+
+## Installation
+
+### Quick Install
+
+```bash
+# Clone or download the files
+cd plasma-backup-manager
+
+# Run the installation script
+chmod +x install.sh
+./install.sh
+```
+
+The installation script will:
+1. Install required system packages (python3, python3-qt6, qt6-qtbase)
+2. Install Python dependencies (PyQt6)
+3. Make the script executable
+4. Create a desktop entry for the application menu
+5. Create a command-line shortcut (if ~/.local/bin exists)
+6. Optionally create the default backup directory
+
+### Manual Installation
+
+```bash
+# Install system dependencies
+sudo dnf install python3 python3-pip python3-qt6 qt6-qtbase
+
+# Install Python dependencies
+pip install --user -r requirements.txt
+
+# Make executable
+chmod +x plasma-backup-manager.py
+
+# Run
+./plasma-backup-manager.py
+```
+
+## Setting Up NAS Storage
+
+### Automatic NFS Mount (Recommended)
+
+Create an NFS mount in `/etc/fstab`:
+
+```bash
+# Edit fstab
+sudo nano /etc/fstab
+
+# Add your NAS mount (example):
+192.168.1.100:/volume1/Backups  /home/YOUR_USERNAME/NAS  nfs  defaults,user,rw,auto  0  0
+```
+
+Create the mount point and mount:
+
+```bash
+mkdir -p ~/NAS
+sudo mount -a
+```
+
+### Manual Mount
+
+```bash
+# Create mount point
+mkdir -p ~/NAS
+
+# Mount NFS share (example)
+sudo mount -t nfs 192.168.1.100:/volume1/Backups ~/NAS
+
+# For CIFS/SMB shares
+sudo mount -t cifs //192.168.1.100/Backups ~/NAS -o username=YOUR_USER,password=YOUR_PASS
+```
+
+### Verify Mount
+
+```bash
+df -h | grep NAS
+ls ~/NAS
+```
+
+## Usage
+
+### Starting the Application
+
+**From Application Menu:**
+- Open the application menu
+- Search for "Plasma Backup Manager"
+- Click to launch
+
+**From Terminal:**
+```bash
+# If installed with script
+plasma-backup-manager
+
+# Or directly
+./plasma-backup-manager.py
+```
+
+### Creating a Backup
+
+1. Open the application
+2. Go to the **Backup** tab
+3. Verify the backup path (default: `~/NAS/PlasmaBackup/[hostname]`)
+4. Select what to backup:
+   - ✓ KDE Plasma Settings & Plasmoids
+   - ✓ Application Configurations
+   - ✓ Firefox Profiles
+   - ✓ Thunderbird Profiles
+   - ✓ User Directories
+5. Click **Start Backup**
+6. Wait for completion (may take several minutes depending on data size)
+
+### Restoring a Backup
+
+1. Go to the **Restore** tab
+2. Click **List Available Backups** to see all backups
+3. Double-click a backup from the list, or manually enter the backup path
+4. Read the warning carefully
+5. Click **Start Restore**
+6. After completion, **log out and log back in** for all changes to take effect
+
+⚠️ **Important:** Restore will overwrite your current settings. Make sure you have a current backup before restoring!
+
+## Backup Structure
+
+Backups are organized as follows:
+
+```
+~/NAS/PlasmaBackup/
+└── hostname/
+    ├── 20241211_143022/
+    │   ├── backup_metadata.json
+    │   ├── kde/
+    │   │   ├── .config/
+    │   │   └── .local/share/
+    │   ├── configs/
+    │   ├── firefox/
+    │   ├── thunderbird/
+    │   └── user_data/
+    │       ├── Documents/
+    │       ├── Pictures/
+    │       └── Videos/
+    └── 20241211_150000/
+        └── ...
+```
+
+### Metadata File
+
+Each backup includes a `backup_metadata.json` file with:
+- Timestamp
+- Hostname
+- Username
+- Backup configuration
+- KDE Plasma version
+- Fedora version
+
+## Customizing Backup Location
+
+### In the GUI
+
+1. Go to the **Backup** tab
+2. In the "Backup Location" section, modify the path
+3. Click **Browse...** to select a different directory
+
+### Custom NAS Mount Point
+
+If your NAS is mounted elsewhere:
+
+```bash
+# Example: NAS mounted at /mnt/nas
+# In the application, change the path to:
+/mnt/nas/PlasmaBackup/hostname
+```
+
+### Environment-Specific Paths
+
+For multiple computers with different NAS locations, you can:
+
+1. **Use hostname-based paths:**
+   ```
+   ~/NAS/PlasmaBackup/desktop-pc
+   ~/NAS/PlasmaBackup/laptop
+   ```
+
+2. **Use custom paths per machine:**
+   - Desktop: `/mnt/storage/Backups/desktop-pc`
+   - Laptop: `~/NAS/Backups/laptop`
+
+## Troubleshooting
+
+### NAS Mount Issues
+
+**Problem:** Backup location not accessible
+```bash
+# Check if NAS is mounted
+df -h | grep NAS
+mount | grep NAS
+
+# Try remounting
+sudo umount ~/NAS
+sudo mount -a
+```
+
+**Problem:** Permission denied
+```bash
+# Check permissions
+ls -la ~/NAS
+
+# Ensure your user has write access
+# For NFS, check server export permissions
+# For CIFS, check mount options (uid, gid)
+```
+
+### Backup Fails
+
+**Problem:** Insufficient disk space
+```bash
+# Check available space on NAS
+df -h ~/NAS
+
+# Check backup size estimate
+du -sh ~/.mozilla ~/.thunderbird ~/Documents ~/Pictures ~/Videos
+```
+
+**Problem:** Backup takes too long
+- Consider excluding large directories
+- Use compression (future feature)
+- Check network speed to NAS
+
+### Restore Issues
+
+**Problem:** Plasma doesn't restart after restore
+```bash
+# Manually restart Plasma
+kquitapp6 plasmashell && plasmashell &
+
+# Or log out and log back in
+```
+
+**Problem:** Settings not applied
+- Make sure you logged out and logged back in
+- Check file permissions in restored directories
+- Verify the backup completed successfully
+
+### Application Won't Start
+
+**Problem:** Missing Qt6 libraries
+```bash
+# Reinstall Qt6
+sudo dnf install python3-qt6 qt6-qtbase
+
+# Verify PyQt6
+python3 -c "from PyQt6 import QtWidgets; print('PyQt6 OK')"
+```
+
+**Problem:** Import errors
+```bash
+# Reinstall Python dependencies
+pip install --user --force-reinstall -r requirements.txt
+```
+
+## Advanced Usage
+
+### Command-Line Options
+
+Currently the application is GUI-only, but you can script backups using the Python modules directly.
+
+### Scheduled Backups
+
+Create a systemd timer for automatic backups:
+
+```bash
+# Create timer unit
+mkdir -p ~/.config/systemd/user/
+
+cat > ~/.config/systemd/user/plasma-backup.service << EOF
+[Unit]
+Description=KDE Plasma Backup
+
+[Service]
+Type=oneshot
+ExecStart=/path/to/plasma-backup-manager.py --auto-backup
+EOF
+
+cat > ~/.config/systemd/user/plasma-backup.timer << EOF
+[Unit]
+Description=Weekly Plasma Backup
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+# Enable timer
+systemctl --user enable plasma-backup.timer
+systemctl --user start plasma-backup.timer
+```
+
+### Excluding Directories
+
+To exclude specific directories, edit the script and modify the `backup_user_directories` method.
+
+## Localization Support
+
+The application automatically detects XDG user directory names from `~/.config/user-dirs.dirs`, which handles all localized directory names:
+
+- **French:** Documents, Images, Vidéos, Musique, Téléchargements
+- **German:** Dokumente, Bilder, Videos, Musik, Downloads
+- **Spanish:** Documentos, Imágenes, Vídeos, Música, Descargas
+- And more...
+
+## Security Considerations
+
+⚠️ **Important Security Notes:**
+
+1. **SSH Keys:** The backup includes `~/.ssh/config` but NOT private keys for security
+2. **Passwords:** Application passwords are backed up (Firefox, Thunderbird master passwords)
+3. **NAS Security:** Ensure your NAS has proper access controls
+4. **Backup Encryption:** Consider encrypting your NAS mount or using encrypted storage
+
+### Recommended Security Practices
+
+- Use encrypted NFS (Kerberos) or encrypted CIFS mounts
+- Set proper file permissions on backup directory (700)
+- Regularly rotate backups and delete old ones
+- Store critical backups off-site
+- Test restore procedures regularly
+
+## What's NOT Backed Up
+
+- System-wide configurations (require root access)
+- Installed applications (use package manager)
+- Flatpak/Snap applications and data
+- Virtual machines
+- Docker containers
+- Steam games (use separate steam backup tools)
+- Private SSH keys (for security reasons)
+- Passwords stored in system keyring (security)
+
+## FAQ
+
+**Q: Can I use this on other distributions?**
+A: It's designed for Fedora but should work on any Linux distribution with KDE Plasma 6.5+ and Qt6. You may need to adjust package installation commands.
+
+**Q: Will this work with KDE Plasma 5?**
+A: The application uses Qt6 and is designed for Plasma 6. For Plasma 5, you would need to modify it to use PyQt5.
+
+**Q: Can I backup to a local directory instead of NAS?**
+A: Yes! Just specify any local path in the backup location field.
+
+**Q: How much space do I need?**
+A: Depends on your data. KDE settings are typically < 100MB. Firefox/Thunderbird profiles can be several GB. User directories depend on your content.
+
+**Q: Can I backup multiple computers to the same NAS?**
+A: Yes! Each computer creates its own subdirectory based on hostname.
+
+**Q: What if I change my hostname?**
+A: The application uses the current hostname. To restore from a different hostname, manually specify the backup path.
+
+**Q: Can I exclude specific plasmoids?**
+A: Currently no, but you can edit the script to exclude specific configuration files.
+
+## Contributing
+
+Suggestions and improvements are welcome! This is designed to be a community tool for KDE Plasma users.
+
+## License
+
+This software is provided as-is for personal and educational use.
+
+## Version History
+
+**v1.0.0** (2024-12-11)
+- Initial release
+- Qt6 GUI with Breeze theme integration
+- Full KDE Plasma 6.5+ support
+- NAS backup integration
+- Localized directory name support
+- Complete Firefox and Thunderbird backup
+- Metadata storage and backup listing
+
+## Credits
+
+Developed for the KDE Plasma community on Fedora Linux.
+
+## Support
+
+For issues and questions:
+- Check the troubleshooting section
+- Verify your system meets the requirements
+- Test with a fresh backup on a non-critical system first
+
+---
+
+**Happy Backing Up! 🎉**
