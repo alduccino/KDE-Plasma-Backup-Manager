@@ -78,8 +78,10 @@ A comprehensive Qt6-based backup and restore solution for KDE Plasma systems, sp
 - Fedora Linux (tested on Fedora 43+)
 - KDE Plasma 6.5 or higher
 - Python 3.9+
-- Qt6
-- PyQt6
+- Qt6 (qt6-qtbase)
+- PyQt6 (installed via pip)
+
+**Note:** On Fedora, PyQt6 is installed via pip as it's not available in the default DNF repositories.
 
 ## Installation
 
@@ -124,9 +126,9 @@ git clone https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
 cd KDE-Plasma-Backup-Manager
 
 # Install system dependencies
-sudo dnf install python3 python3-pip python3-qt6 qt6-qtbase
+sudo dnf install python3 python3-pip qt6-qtbase
 
-# Install Python dependencies
+# Install Python dependencies (includes PyQt6)
 pip install --user -r requirements.txt
 
 # Make executable
@@ -135,6 +137,8 @@ chmod +x plasma-backup-manager.py plasma-backup-cli.py plasma-backup-auto.sh
 # Run
 ./plasma-backup-manager.py
 ```
+
+**Note:** PyQt6 is installed via pip rather than DNF as `python3-qt6` is not available in Fedora's standard repositories.
 
 ## Setting Up NAS Storage
 
@@ -346,9 +350,9 @@ kquitapp6 plasmashell && plasmashell &
 **Problem:** Missing Qt6 libraries
 ```bash
 # Reinstall Qt6
-sudo dnf install python3-qt6 qt6-qtbase
+sudo dnf install qt6-qtbase
 
-# Verify PyQt6
+# Verify PyQt6 (should be installed via pip, not DNF)
 python3 -c "from PyQt6 import QtWidgets; print('PyQt6 OK')"
 ```
 
@@ -356,6 +360,16 @@ python3 -c "from PyQt6 import QtWidgets; print('PyQt6 OK')"
 ```bash
 # Reinstall Python dependencies
 pip install --user --force-reinstall -r requirements.txt
+
+# If you get "No module named 'PyQt6'", install it:
+pip install --user PyQt6
+```
+
+**Problem:** "python3-qt6" not found during installation
+```bash
+# This is normal on Fedora - PyQt6 is installed via pip instead
+# Just run the install script, which will handle this correctly
+./install.sh
 ```
 
 ## Advanced Usage

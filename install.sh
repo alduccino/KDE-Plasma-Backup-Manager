@@ -29,14 +29,15 @@ fi
 echo -e "${BLUE}Installing system dependencies...${NC}"
 
 # Install Python and Qt dependencies
-sudo dnf install -y python3 python3-pip python3-qt6 qt6-qtbase
+# Note: python3-qt6 is not available in Fedora repos, we'll install PyQt6 via pip instead
+sudo dnf install -y python3 python3-pip qt6-qtbase --skip-unavailable
 
 echo -e "${GREEN}✓ System dependencies installed${NC}"
 echo ""
 
 echo -e "${BLUE}Installing Python dependencies...${NC}"
 
-# Install Python packages
+# Install Python packages (PyQt6 will be installed here)
 pip install --user -r requirements.txt
 
 echo -e "${GREEN}✓ Python dependencies installed${NC}"

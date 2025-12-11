@@ -83,7 +83,7 @@ cd KDE-Plasma-Backup-Manager
 git remote add upstream https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
 
 # 4. Install dependencies
-sudo dnf install python3 python3-pip python3-qt6 qt6-qtbase
+sudo dnf install python3 python3-pip qt6-qtbase
 pip install --user -r requirements.txt
 
 # 5. Create a development branch
