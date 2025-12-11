@@ -108,34 +108,56 @@ class BackupWorker(QThread):
             backup_dir.mkdir(parents=True, exist_ok=True)
             
             self.progress.emit(f"Creating backup in: {backup_dir}")
+            self.progress.emit("")
             
             # Backup KDE Plasma settings
             if self.config['kde_settings']:
                 self.backup_kde_settings(backup_dir)
+                self.progress.emit("")
             
             # Backup application configs
             if self.config['app_configs']:
                 self.backup_app_configs(backup_dir)
+                self.progress.emit("")
             
             # Backup Firefox profiles
             if self.config['firefox']:
                 self.backup_firefox(backup_dir)
+                self.progress.emit("")
             
             # Backup Thunderbird profiles
             if self.config['thunderbird']:
                 self.backup_thunderbird(backup_dir)
+                self.progress.emit("")
             
             # Backup user directories
             if self.config['user_dirs']:
                 self.backup_user_directories(backup_dir)
+                self.progress.emit("")
             
             # Save backup metadata
             self.save_metadata(backup_dir, timestamp)
             
-            self.finished.emit(True, f"Backup completed successfully: {backup_dir}")
+            # Generate summary
+            self.progress.emit("=== Backup Summary ===")
+            for subdir in backup_dir.iterdir():
+                if subdir.is_dir():
+                    file_count = sum(1 for _ in subdir.rglob('*') if _.is_file())
+                    size = sum(f.stat().st_size for f in subdir.rglob('*') if f.is_file())
+                    size_mb = size / (1024 * 1024)
+                    self.progress.emit(f"  {subdir.name}: {file_count} files, {size_mb:.1f} MB")
+            
+            total_size = sum(f.stat().st_size for f in backup_dir.rglob('*') if f.is_file())
+            total_mb = total_size / (1024 * 1024)
+            self.progress.emit(f"  Total: {total_mb:.1f} MB")
+            self.progress.emit("")
+            
+            self.finished.emit(True, f"Backup completed successfully!\n\nLocation: {backup_dir}\nSize: {total_mb:.1f} MB")
             
         except Exception as e:
-            self.finished.emit(False, f"Backup failed: {str(e)}")
+            import traceback
+            error_msg = f"Backup failed: {str(e)}\n\nDetails:\n{traceback.format_exc()}"
+            self.finished.emit(False, error_msg)
     
     def backup_kde_settings(self, backup_dir):
         """Backup KDE Plasma settings including plasmoids"""
@@ -174,12 +196,6 @@ class BackupWorker(QThread):
         config_dir = backup_dir / "configs"
         config_dir.mkdir(exist_ok=True)
         
-        # Common config directories
-        config_paths = [
-            ".config",  # General configs (selective)
-            ".local/share",  # Application data (selective)
-        ]
-        
         # Specific applications to backup
         specific_apps = [
             ".config/Code",
@@ -194,6 +210,7 @@ class BackupWorker(QThread):
             ".ssh/config",
         ]
         
+        backed_up_count = 0
         for app_path in specific_apps:
             src = Path(self.home) / app_path
             if src.exists():
@@ -202,12 +219,19 @@ class BackupWorker(QThread):
                 try:
                     if src.is_dir():
                         safe_copytree(str(src), str(dst), ignore_errors=True)
+                        self.progress.emit(f"  ✓ Backed up {app_path}")
+                        backed_up_count += 1
                     else:
                         shutil.copy2(src, dst)
+                        self.progress.emit(f"  ✓ Backed up {app_path}")
+                        backed_up_count += 1
                 except Exception as e:
                     self.progress.emit(f"  ⚠ Skipped {app_path}: {str(e)}")
         
-        self.progress.emit("Application configs backed up")
+        if backed_up_count > 0:
+            self.progress.emit(f"Application configs backed up ({backed_up_count} items)")
+        else:
+            self.progress.emit("No application configs found to backup")
     
     def backup_firefox(self, backup_dir):
         """Backup Firefox profiles"""
