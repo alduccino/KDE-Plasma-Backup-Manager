@@ -3,8 +3,9 @@
 ## Installation (5 minutes)
 
 ```bash
-# 1. Download or clone the files
-cd plasma-backup-manager
+# 1. Clone the repository from GitHub
+git clone https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
+cd KDE-Plasma-Backup-Manager
 
 # 2. Run the installer
 chmod +x install.sh

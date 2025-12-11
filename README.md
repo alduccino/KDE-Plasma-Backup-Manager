@@ -1,6 +1,35 @@
 # KDE Plasma Backup Manager
 
+[![GitHub](https://img.shields.io/badge/github-alduccino/KDE--Plasma--Backup--Manager-blue?logo=github)](https://github.com/alduccino/KDE-Plasma-Backup-Manager)
+[![Platform](https://img.shields.io/badge/platform-Fedora%20Linux-51A2DA?logo=fedora)](https://fedoraproject.org/)
+[![KDE Plasma](https://img.shields.io/badge/KDE%20Plasma-6.5%2B-1D99F3?logo=kde)](https://kde.org/plasma-desktop/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python)](https://www.python.org/)
+[![Qt](https://img.shields.io/badge/Qt-6-41CD52?logo=qt)](https://www.qt.io/)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
+
 A comprehensive Qt6-based backup and restore solution for KDE Plasma systems, specifically designed for Fedora Linux with KDE Plasma 6.5+.
+
+---
+
+---
+
+## Screenshots
+
+### Main Backup Interface
+![Backup Tab](docs/images/backup-tab.png)
+*Simple and intuitive backup interface with progress tracking*
+
+### Restore Interface
+![Restore Tab](docs/images/restore-tab.png)
+*Easy restore with backup browsing and safety warnings*
+
+### Settings & Info
+![Settings Tab](docs/images/settings-tab.png)
+*System information and configuration*
+
+> **Note:** Screenshots coming soon! Feel free to contribute screenshots from your system.
+
+---
 
 ## Features
 
@@ -54,11 +83,12 @@ A comprehensive Qt6-based backup and restore solution for KDE Plasma systems, sp
 
 ## Installation
 
-### Quick Install
+### Quick Install from GitHub
 
 ```bash
-# Clone or download the files
-cd plasma-backup-manager
+# Clone the repository
+git clone https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
+cd KDE-Plasma-Backup-Manager
 
 # Run the installation script
 chmod +x install.sh
@@ -68,14 +98,31 @@ chmod +x install.sh
 The installation script will:
 1. Install required system packages (python3, python3-qt6, qt6-qtbase)
 2. Install Python dependencies (PyQt6)
-3. Make the script executable
+3. Make the scripts executable
 4. Create a desktop entry for the application menu
 5. Create a command-line shortcut (if ~/.local/bin exists)
 6. Optionally create the default backup directory
 
+### Alternative: Download Release
+
+```bash
+# Download the latest release
+wget https://github.com/alduccino/KDE-Plasma-Backup-Manager/archive/refs/heads/main.zip
+unzip main.zip
+cd KDE-Plasma-Backup-Manager-main
+
+# Run installer
+chmod +x install.sh
+./install.sh
+```
+
 ### Manual Installation
 
 ```bash
+# Clone repository
+git clone https://github.com/alduccino/KDE-Plasma-Backup-Manager.git
+cd KDE-Plasma-Backup-Manager
+
 # Install system dependencies
 sudo dnf install python3 python3-pip python3-qt6 qt6-qtbase
 
@@ -83,7 +130,7 @@ sudo dnf install python3 python3-pip python3-qt6 qt6-qtbase
 pip install --user -r requirements.txt
 
 # Make executable
-chmod +x plasma-backup-manager.py
+chmod +x plasma-backup-manager.py plasma-backup-cli.py plasma-backup-auto.sh
 
 # Run
 ./plasma-backup-manager.py
@@ -417,11 +464,44 @@ A: Currently no, but you can edit the script to exclude specific configuration f
 
 ## Contributing
 
-Suggestions and improvements are welcome! This is designed to be a community tool for KDE Plasma users.
+This project is open source and welcomes contributions!
+
+**Repository:** https://github.com/alduccino/KDE-Plasma-Backup-Manager
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Areas for Contribution
+
+- Additional backup targets (Steam, Lutris, etc.)
+- Compression support (tar.gz, zip)
+- Incremental backup functionality
+- GUI improvements and translations
+- Testing on other distributions
+- Bug fixes and documentation improvements
+
+### Reporting Issues
+
+Found a bug or have a feature request? Please open an issue on GitHub:
+https://github.com/alduccino/KDE-Plasma-Backup-Manager/issues
 
 ## License
 
-This software is provided as-is for personal and educational use.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+**In Brief:**
+- ✅ You can use this software freely
+- ✅ You can modify and distribute it
+- ✅ You must include the license and copyright notice
+- ✅ Changes must be documented
+- ✅ Modified versions must also be GPL-3.0
+
+For more details, see: https://www.gnu.org/licenses/gpl-3.0.html
 
 ## Version History
 
@@ -434,16 +514,53 @@ This software is provided as-is for personal and educational use.
 - Complete Firefox and Thunderbird backup
 - Metadata storage and backup listing
 
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
+## Project Files
+
+- **README.md** - This file, comprehensive documentation
+- **QUICKSTART.md** - Quick start guide for new users
+- **CHANGELOG.md** - Version history and release notes
+- **CONTRIBUTING.md** - Guide for contributors
+- **LICENSE** - GPL-3.0 license
+- **PROJECT_STRUCTURE.md** - Detailed project structure documentation
+- **.github/** - GitHub templates (issues, PRs)
+- **plasma-backup-manager.py** - Main GUI application
+- **plasma-backup-cli.py** - Command-line version
+- **plasma-backup-auto.sh** - Automation wrapper script
+- **install.sh** - Installation script
+- **requirements.txt** - Python dependencies
+- **systemd-examples.txt** - Systemd automation examples
+
 ## Credits
 
 Developed for the KDE Plasma community on Fedora Linux.
 
 ## Support
 
+### Getting Help
+
+- **Documentation:** Read the [full README](README.md) and [Quick Start Guide](QUICKSTART.md)
+- **Issues:** Report bugs or request features on [GitHub Issues](https://github.com/alduccino/KDE-Plasma-Backup-Manager/issues)
+- **Discussions:** Join the conversation on [GitHub Discussions](https://github.com/alduccino/KDE-Plasma-Backup-Manager/discussions)
+
+### Before Reporting Issues
+
 For issues and questions:
-- Check the troubleshooting section
-- Verify your system meets the requirements
-- Test with a fresh backup on a non-critical system first
+1. Check the [Troubleshooting](#troubleshooting) section
+2. Verify your system meets the [Requirements](#requirements)
+3. Test with a fresh backup on a non-critical system first
+4. Search existing [GitHub Issues](https://github.com/alduccino/KDE-Plasma-Backup-Manager/issues) to see if it's already reported
+
+### Community
+
+This is a community-driven project for KDE Plasma users. We welcome:
+- Bug reports
+- Feature requests
+- Code contributions
+- Documentation improvements
+- Translations
+- Testing on different systems
 
 ---
 
