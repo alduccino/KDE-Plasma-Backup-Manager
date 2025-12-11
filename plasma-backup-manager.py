@@ -20,6 +20,75 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon, QFont
 
+def safe_copytree(src, dst, ignore_errors=True):
+    """
+    Safely copy directory tree, handling symlinks and permission errors.
+    This is NAS-friendly and won't fail on problematic symlinks.
+    """
+    def copy_function(src_file, dst_file):
+        """Custom copy function that handles symlinks"""
+        try:
+            # If it's a symlink, copy the target content instead of the link itself
+            if os.path.islink(src_file):
+                # Follow the symlink and copy the actual content
+                real_src = os.path.realpath(src_file)
+                if os.path.exists(real_src):
+                    if os.path.isdir(real_src):
+                        # Don't recursively copy directory symlinks to avoid loops
+                        return
+                    else:
+                        shutil.copy2(real_src, dst_file)
+                return
+            else:
+                # Regular file, copy normally
+                shutil.copy2(src_file, dst_file)
+        except (OSError, PermissionError) as e:
+            if not ignore_errors:
+                raise
+            # Skip files that can't be copied
+            pass
+    
+    def ignore_function(directory, contents):
+        """Ignore function to skip problematic items"""
+        ignored = []
+        for item in contents:
+            item_path = os.path.join(directory, item)
+            # Skip if it's a broken symlink
+            if os.path.islink(item_path) and not os.path.exists(os.path.realpath(item_path)):
+                ignored.append(item)
+            # Skip if it's a directory symlink (to avoid loops)
+            elif os.path.islink(item_path) and os.path.isdir(os.path.realpath(item_path)):
+                ignored.append(item)
+        return ignored
+    
+    try:
+        # Use copy_function instead of symlinks=True
+        shutil.copytree(
+            src, dst, 
+            copy_function=copy_function,
+            ignore=ignore_function,
+            dirs_exist_ok=True,
+            ignore_dangling_symlinks=True
+        )
+    except Exception as e:
+        if not ignore_errors:
+            raise
+        # If copytree fails entirely, try manual copy
+        try:
+            os.makedirs(dst, exist_ok=True)
+            for item in os.listdir(src):
+                s = os.path.join(src, item)
+                d = os.path.join(dst, item)
+                if os.path.isdir(s) and not os.path.islink(s):
+                    safe_copytree(s, d, ignore_errors)
+                elif not os.path.islink(s):
+                    try:
+                        shutil.copy2(s, d)
+                    except:
+                        pass
+        except:
+            pass
+
 class BackupWorker(QThread):
     """Worker thread for backup operations"""
     progress = pyqtSignal(str)
@@ -130,10 +199,13 @@ class BackupWorker(QThread):
             if src.exists():
                 dst = config_dir / app_path
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                if src.is_dir():
-                    shutil.copytree(src, dst, dirs_exist_ok=True, symlinks=True)
-                else:
-                    shutil.copy2(src, dst)
+                try:
+                    if src.is_dir():
+                        safe_copytree(str(src), str(dst), ignore_errors=True)
+                    else:
+                        shutil.copy2(src, dst)
+                except Exception as e:
+                    self.progress.emit(f"  ⚠ Skipped {app_path}: {str(e)}")
         
         self.progress.emit("Application configs backed up")
     
@@ -144,8 +216,11 @@ class BackupWorker(QThread):
         firefox_src = Path(self.home) / ".mozilla/firefox"
         if firefox_src.exists():
             firefox_dst = backup_dir / "firefox"
-            shutil.copytree(firefox_src, firefox_dst, dirs_exist_ok=True, symlinks=True)
-            self.progress.emit("Firefox profiles backed up")
+            try:
+                safe_copytree(str(firefox_src), str(firefox_dst), ignore_errors=True)
+                self.progress.emit("Firefox profiles backed up")
+            except Exception as e:
+                self.progress.emit(f"Warning: Firefox backup had issues: {str(e)}")
         else:
             self.progress.emit("Firefox profiles not found, skipping")
     
@@ -156,8 +231,11 @@ class BackupWorker(QThread):
         thunderbird_src = Path(self.home) / ".thunderbird"
         if thunderbird_src.exists():
             thunderbird_dst = backup_dir / "thunderbird"
-            shutil.copytree(thunderbird_src, thunderbird_dst, dirs_exist_ok=True, symlinks=True)
-            self.progress.emit("Thunderbird profiles backed up")
+            try:
+                safe_copytree(str(thunderbird_src), str(thunderbird_dst), ignore_errors=True)
+                self.progress.emit("Thunderbird profiles backed up")
+            except Exception as e:
+                self.progress.emit(f"Warning: Thunderbird backup had issues: {str(e)}")
         else:
             self.progress.emit("Thunderbird profiles not found, skipping")
     
@@ -176,7 +254,7 @@ class BackupWorker(QThread):
                 self.progress.emit(f"Backing up {dir_type}...")
                 dst = data_dir / dir_type
                 try:
-                    shutil.copytree(dir_path, dst, dirs_exist_ok=True, symlinks=True)
+                    safe_copytree(str(dir_path), str(dst), ignore_errors=True)
                     self.progress.emit(f"{dir_type} backed up")
                 except Exception as e:
                     self.progress.emit(f"Warning: Could not backup {dir_type}: {str(e)}")
@@ -235,20 +313,26 @@ class BackupWorker(QThread):
                     dst = Path(dst_base) / rel_path
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     
-                    if item.is_dir():
-                        shutil.copytree(item, dst, dirs_exist_ok=True, symlinks=True)
-                    else:
-                        shutil.copy2(item, dst)
+                    try:
+                        if item.is_dir():
+                            safe_copytree(str(item), str(dst), ignore_errors=True)
+                        else:
+                            shutil.copy2(item, dst)
+                    except Exception as e:
+                        self.progress.emit(f"  ⚠ Skipped {item.name}: {str(e)}")
         else:
             src = src_path / pattern
             if src.exists():
                 dst = Path(dst_base) / pattern
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 
-                if src.is_dir():
-                    shutil.copytree(src, dst, dirs_exist_ok=True, symlinks=True)
-                else:
-                    shutil.copy2(src, dst)
+                try:
+                    if src.is_dir():
+                        safe_copytree(str(src), str(dst), ignore_errors=True)
+                    else:
+                        shutil.copy2(src, dst)
+                except Exception as e:
+                    self.progress.emit(f"  ⚠ Skipped {pattern}: {str(e)}")
     
     def save_metadata(self, backup_dir, timestamp):
         """Save backup metadata"""
